@@ -464,7 +464,7 @@ def view_battle(ctx):
         fdown = '[暗牌 ?]'
         ftot = '= ? + %d' % fu
     if know != 'exact' and fu + 1 > T:
-        ftot += '（光明牌就超过 %d 了：它肯定爆了）' % T
+        ftot += '（光是明牌就超过 %d 了：它肯定爆了）' % T
     fup = cards_text(B['foe']['up']) or '（没有明牌）'
     ctx.say('%s的牌：%s %s  %s' % (En['name'], fdown, fup, ftot))
     ty = E.total(B['you'])
