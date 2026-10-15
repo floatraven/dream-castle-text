@@ -765,7 +765,8 @@ def update_vis(G):
         if m['visited'].get(k) or m['revealed'].get(k) or m['dream'] == 'lucid' or m['kind'] != 'main':
             v = 3
         elif m['dream'] == 'lost':
-            v = 1 if k in nb else 0
+            # 迷雾里只有故事会还亮着，免得信的碎片怎么也找不到
+            v = 3 if m['rooms'][k]['type'] == 'story' else (1 if k in nb else 0)
         elif L <= 0:
             v = 1 if k in nb else 0
         elif L >= 6 or k in nb or manhattan(m['cur'], k) <= radius_for(L) + scope:
@@ -1315,12 +1316,13 @@ def trait_round_start(G, B):
             B['msgs'].append('维护机拧了拧螺丝，修好 1 点血。')
     elif eid == 'magician':
         # 魔术师袖子里最多藏 2 张，每局都换一张新的，不让牌在袖子里睡大觉
-        if len(p['hand']) >= 2:
+        swapped = len(p['hand']) >= 2
+        if swapped:
             p['hand'].pop(0)
-            B['msgs'].append('礼帽魔术师把一张没用上的牌塞回了帽子里。')
         c = pick(['candy', 'candy', 'umb', 'umb', 'gate17', 'gate24', 'watch', 'watch', 'wand', 'wand'])
         p['hand'].append('wand%d' % ri(2, 6) if c == 'wand' else c)
-        B['msgs'].append('礼帽魔术师从帽子里变出一张牌，藏进了袖子里。')
+        B['msgs'].append('礼帽魔术师把一张没用上的牌塞回帽子，又变出一张新的，藏进了袖子里。' if swapped
+                         else '礼帽魔术师从帽子里变出一张牌，藏进了袖子里。')
     elif eid == 'merchant':
         if not p['hand']:
             c = pick(['candy', 'umb', 'umb', 'gate17', 'gate24', 'watch', 'watch', 'wand', 'wand'])
