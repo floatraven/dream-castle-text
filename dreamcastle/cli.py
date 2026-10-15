@@ -272,7 +272,15 @@ def floor_title(G):
     m = G['map']
     if m['kind'] == 'bonus':
         return '兔子洞 · %s · %s' % (F['label'], F['name'])
-    return '%s · %s' % (F['label'], F['name'])
+    return main_floor_title(F)
+
+
+def main_floor_title(F):
+    # 门牌上的层号是梦里的玩笑（第五层、第三十层……），真正的层数写在前面，免得以为跳层了
+    real = '第 %d / 6 层' % F['n']
+    if F['label'] == '第%s层' % '一二三四五六'[F['n'] - 1]:
+        return '%s · %s' % (real, F['name'])
+    return '%s · %s（门牌上写着「%s」）' % (real, F['name'], F['label'])
 
 
 def view_map(ctx):
@@ -408,7 +416,7 @@ def trait_text(B):
     elif eid == 'puppet':
         s += ' ×%d' % p['mirrors']
     elif eid in ('magician', 'merchant'):
-        s += ' · 袖子里藏着 1 张牌' if p['hand'] else ''
+        s += ' · 袖子里藏着 %d 张牌' % len(p['hand']) if p['hand'] else ''
     elif eid == 'gpt':
         s += ' ×%d' % p['pitch']
     elif eid == 'gemini':
@@ -1120,7 +1128,7 @@ def menu_stairs(ctx, p):
     opts = [opt('乘电梯' if lift else '走下去', act=go)]
     if not forced:
         opts.append(opt('再逛逛', '以后回到这里，用 enter 再下楼', act=lambda ctx: _close(ctx)))
-    return {'title': '电梯间' if lift else '楼梯间', 'sub': '时长用完了，只能往下走' if forced else '下面是「%s」' % nxt,
+    return {'title': '电梯间' if lift else '楼梯间', 'sub': '时长用完了，只能往下走' if forced else '下面是第 %d 层「%s」' % (G['floor'] + 1, nxt),
             'body': [text], 'options': opts}
 
 
@@ -1380,7 +1388,7 @@ def show_floor_intro(ctx):
     m = G['map']
     F = E.floor_info(G)
     text = S.FLOOR_TEXT[m['floor']]
-    ctx.say('', DOUBLE, '%s · %s' % (F['label'], F['name']), DOUBLE, text)
+    ctx.say('', DOUBLE, main_floor_title(F), DOUBLE, text)
     extra = []
     if m.get('dream'):
         D = DREAMS[m['dream']]
@@ -1391,7 +1399,7 @@ def show_floor_intro(ctx):
         extra.append('这一层没有时长限制。梦魇在最里面等你。')
     if extra:
         ctx.say('', *extra)
-    journal_add(G, '%s · %s' % (F['label'], F['name']), text)
+    journal_add(G, main_floor_title(F), text)
 
 
 def show_bonus_intro(ctx):
