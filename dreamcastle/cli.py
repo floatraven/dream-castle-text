@@ -1526,9 +1526,13 @@ def go_to(ctx, q):
     if not c['ok']:
         raise GameError('去不了 %s：%s。' % (coord(k), c['why']))
     cost = '不花时长' if c['cost'] == 0 else '花了 %d 时长' % c['cost']
+    was_done = m['rooms'][k]['done']
     E.do_move(G, k)
     # 兔子洞里的时长用完时，走进房间的同时会被吐回原来的地图
     label = room_label(G, k) if G['map'] is m else ROOMS[m['rooms'][k]['type']]['name']
+    # 空房间、前厅一走进去就算来过了；第一次进来时不该说「来过了」
+    if not was_done and label.endswith('（来过了）'):
+        label = label[:-len('（来过了）')]
     ctx.say('你走到了 %s（%s）：%s。' % (coord(k), cost, label))
     drain_inbox(ctx)  # 路上发生的事（蜡烛烧完之类）先说，再进房间
     p = G.get('pending')
