@@ -1313,11 +1313,19 @@ def trait_round_start(G, B):
             B['foeHp'] += 1
             p['parts'] -= 1
             B['msgs'].append('维护机拧了拧螺丝，修好 1 点血。')
-    elif eid in ('magician', 'merchant'):
+    elif eid == 'magician':
+        # 魔术师袖子里最多藏 2 张，每局都换一张新的，不让牌在袖子里睡大觉
+        if len(p['hand']) >= 2:
+            p['hand'].pop(0)
+            B['msgs'].append('礼帽魔术师把一张没用上的牌塞回了帽子里。')
+        c = pick(['candy', 'candy', 'umb', 'umb', 'gate17', 'gate24', 'watch', 'watch', 'wand', 'wand'])
+        p['hand'].append('wand%d' % ri(2, 6) if c == 'wand' else c)
+        B['msgs'].append('礼帽魔术师从帽子里变出一张牌，藏进了袖子里。')
+    elif eid == 'merchant':
         if not p['hand']:
             c = pick(['candy', 'umb', 'umb', 'gate17', 'gate24', 'watch', 'watch', 'wand', 'wand'])
             p['hand'].append('wand%d' % ri(2, 6) if c == 'wand' else c)
-            B['msgs'].append('礼帽魔术师从帽子里变出一张牌，藏进了袖子里。' if eid == 'magician' else '诡异行商从货箱里摸出一张牌，藏进了袖子里。')
+            B['msgs'].append('诡异行商从货箱里摸出一张牌，藏进了袖子里。')
     elif eid == 'boss':
         half = B['foeHp'] <= B['foeMax'] // 2
         T = wpick([[17, 1], [21, 0.6 if half else 1], [24, 1]])
@@ -1772,6 +1780,8 @@ def magician_play(G, B, acts):
     p = B['p']
     f = B['foe']
     who = ENEMIES[B['eid']]['name']
+    # 魔术师出手的条件更宽松一些
+    loose = B['eid'] == 'magician'
     for _ in range(2):
         used = False
         i = 0
@@ -1787,7 +1797,7 @@ def magician_play(G, B, acts):
                 ok = True
             elif c.startswith('wand'):
                 n = int(c[4:])
-                if my + n <= T and my + n >= T - 4:
+                if my + n <= T and my + n >= T - (6 if loose else 4):
                     x = take_from_deck(B, lambda cc: cc['v'] == n)
                     if x:
                         f['up'].append(x)
@@ -1803,11 +1813,11 @@ def magician_play(G, B, acts):
                 recalc_target(B)
                 acts.append({'t': 'fx', 'msg': '%s用了「星星门·24」：这一局的目标变成 24。' % who})
                 ok = True
-            elif c == 'candy' and T - 2 <= my <= T and not has_fx(f, 'candy'):
+            elif c == 'candy' and T - (4 if loose else 2) <= my <= T and not has_fx(f, 'candy'):
                 add_fx(B, 'foe', 'candy', '%s的糖果罐：你输了多掉 1 血' % who)
                 acts.append({'t': 'fx', 'msg': '%s用了「糖果罐」：这一局你输了多掉 1 血。' % who})
                 ok = True
-            elif c == 'umb' and my > T and not has_fx(f, 'umb'):
+            elif c == 'umb' and (my > T or (loose and my < T - 6)) and not has_fx(f, 'umb'):
                 add_fx(B, 'foe', 'umb', '%s的小雨伞：它输了少掉 1 血' % who)
                 acts.append({'t': 'fx', 'msg': '%s撑开了「小雨伞」：这一局它输了少掉 1 血。' % who})
                 ok = True
